@@ -1,4 +1,4 @@
-const enum BlockTokens {
+const enum Block {
     HEADER1="\n# ",
     HEADER2="\n## ",
     HEADER3="\n### ",
@@ -12,10 +12,11 @@ const enum BlockTokens {
 
 }
 
-const enum InlineTokens {
+const enum Inline {
     IMAGE="![",
     IMAGE_CLOSE="]",
     IMAGE_SRC="(",
     IMAGE_CLOSE_SRC=")",
-
 }
+
+export { Block, Inline }
