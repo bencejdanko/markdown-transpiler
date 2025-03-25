@@ -1,14 +1,15 @@
 const enum Block {
-    HEADER1="\n# ",
-    HEADER2="\n## ",
-    HEADER3="\n### ",
-    HEADER4="\n#### ",
-    HEADER5="\n##### ",
-    HEADER6="\n###### ",
+    HEADER1="# ",
+    HEADER2="## ",
+    HEADER3="### ",
+    HEADER4="#### ",
+    HEADER5="##### ",
+    HEADER6="###### ",
 
-    BLOCKQUOTE="\n> ",
+    BLOCKQUOTE="> ",
     
-    LIST="\n- ",
+    LIST="* ",
+    LIST_DASH="- ",
 
 }
 
@@ -16,7 +17,10 @@ const enum Inline {
     IMAGE="![",
     IMAGE_CLOSE="]",
     IMAGE_SRC="(",
-    IMAGE_CLOSE_SRC=")",
+    IMAGE_SRC_CLOSE=")",
+
+    ITALIC="*",
+    ITALIC_CLOSE="*",
 }
 
 export { Block, Inline }
