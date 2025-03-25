@@ -7,6 +7,6 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/path": "jsr:@std/path",
 
-    "@/": "./src/"
+    "@markdown/": "./src/markdown/"
   }
 }

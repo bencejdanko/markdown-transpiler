@@ -1,3 +1,3 @@
-import { lex } from "@/markdown/index.ts"
+import { lex } from "@markdown/mod.ts"
 
 lex("Hello, world!")

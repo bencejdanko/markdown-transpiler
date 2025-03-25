@@ -33,3 +33,17 @@ export enum InlineTokens {
     Image = "Image",
     HTML = "HTML",
 }
+
+export class TestCase {
+  description?: string;
+  markdownInput: string;
+  expectedTokens: Token[];
+  expectedRender: string;
+
+  constructor(markdownInput: string, expectedTokens: Token[], expectedRender: string, description?: string,) {
+    this.description = description;
+    this.markdownInput = markdownInput;
+    this.expectedTokens = expectedTokens;
+    this.expectedRender = expectedRender;
+  }
+}
