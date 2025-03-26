@@ -1,8 +1,14 @@
-import { lexCadenceMarkdown } from "@markdown/lexer/mod.ts";
-import { render } from "@markdown/render/mod.ts";
+import { Transpiler } from "@transpiler/mod.ts";
 
-function renderHTML(src: string): string {
-  return render(lexCadenceMarkdown(src));
-}
+import { Emphasis, Header1, Paragraph } from "@markdown/plugins/mod.ts";
 
-export { lexCadenceMarkdown, render, renderHTML };
+const inlineTranspiler = new Transpiler();
+inlineTranspiler.addPlugin(Emphasis);
+
+export { inlineTranspiler }
+
+const transpiler = new Transpiler();
+transpiler.addPlugin(Header1);
+transpiler.addPlugin(Paragraph);
+
+export default transpiler;
