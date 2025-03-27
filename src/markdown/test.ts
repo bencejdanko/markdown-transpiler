@@ -49,6 +49,7 @@ const testCaseGroups = [
   { name: "HEADER TEST CASES", path: "./examples/header" },
   { name: "PARAGRAPH TEST CASES", path: "./examples/paragraph" },
   { name: "THEMATIC BREAK TEST CASES", path: "./examples/thematic_break" },
+  { name: "BLOCKQUOTE TEST CASES", path: "./examples/blockquote" },
 ];
 
 for (const group of testCaseGroups) {

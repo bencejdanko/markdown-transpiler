@@ -1,6 +1,6 @@
 import { Transpiler } from "@transpiler/mod.ts";
 
-import { Emphasis, Header1, Paragraph, Break, NewlineSpace, ThematicBreak } from "@markdown/plugins/mod.ts";
+import { Emphasis, Header1, Paragraph, Break, NewlineSpace, ThematicBreak, Blockquote } from "@markdown/plugins/mod.ts";
 
 const inlineTranspiler = new Transpiler();
 inlineTranspiler.addPlugin(Emphasis);
@@ -12,6 +12,7 @@ export { inlineTranspiler }
 const transpiler = new Transpiler();
 transpiler.addPlugin(Header1);
 transpiler.addPlugin(ThematicBreak);
+transpiler.addPlugin(Blockquote);
 transpiler.addPlugin(Paragraph);
 
 export default transpiler;

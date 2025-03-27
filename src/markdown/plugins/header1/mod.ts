@@ -13,9 +13,11 @@ const lex = (src: string, pos: number) => {
     const { tokens, pos: newPos } = inlineTranspiler.lex(src, currentPos, "\n");
     children.push(...tokens);
     currentPos = newPos;
-    if (src[currentPos] === "\n") {
+
+    while (src[currentPos] === "\n") {
         currentPos += 1;
     }
+
     return { tokens: [{ id: "Header1", children }], pos: currentPos };
 };
 

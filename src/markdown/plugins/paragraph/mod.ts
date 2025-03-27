@@ -7,13 +7,15 @@ const match = (_src: string, _pos: number) => {
 
 const lex = (src: string, pos: number) => {
     const children: Token[] = [];
-    const { tokens, pos: newPos } = inlineTranspiler.lex(src, pos, "\n\n");
+    let { tokens, pos: newPos } = inlineTranspiler.lex(src, pos, "\n\n");
+
+    // If there is another newline, consume it and all following newlines
+    while (src[newPos] === "\n") {
+        newPos++;
+    }
+
     children.push(...tokens);
     pos = newPos;
-
-    if (children.length === 0) {
-        return { tokens: [], pos };
-    }
     
     return { tokens: [{ id: "Paragraph", children }], pos };    
 };

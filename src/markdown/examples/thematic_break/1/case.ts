@@ -9,6 +9,9 @@ const tokens: Token[] = [
     },
     {
         id: "ThematicBreak",
+    },
+    {
+        id: "ThematicBreak",
     }
 ]
 
