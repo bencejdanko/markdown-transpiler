@@ -4,31 +4,35 @@ export interface Token {
   value?: string;
 }
 
-export class Lexer {
-  lexers: LexNode[] = [];
+export class Transpiler {
+  private renderers = new Map<string, (token: Token, renderTokens: (tokens: Token[]) => string) => string>();
+  plugins: Plugin[] = [];
 
   constructor() {
-    this.lex = this.lex.bind(this);
+    this.addRenderer("Text", (token) => token.value || "");
   }
 
-  addLexer(lexer: LexNode): void {
-    this.lexers.push(lexer);
+  addPlugin(plugin: Plugin): void {
+    if (this.plugins.find((p) => p.id === plugin.id)) {
+      throw new Error(`Plugin type ${plugin.id} already exists`);
+    }
+
+    this.plugins.push(plugin);
+    this.addRenderer(plugin.id, plugin.render);
   }
 
-  lex(
-    src: string,
-    pos: number,
-    terminator?: string,
-  ): { tokens: Token[]; pos: number } {
+  lex(src: string, pos: number, terminator?: string): { tokens: Token[]; pos: number } {
     const tokens: Token[] = [];
     let buffer = "";
 
-    function flushBuffer() {
+    const flushBuffer = () => {
       if (buffer) {
-        tokens.push({ id: "Text", value: buffer });
+        if (buffer.trim().length > 0) {
+          tokens.push({ id: "Text", value: buffer.trim() });
+        }
         buffer = "";
       }
-    }
+    };
 
     while (true) {
       if (terminator && src.startsWith(terminator, pos)) {
@@ -36,16 +40,24 @@ export class Lexer {
         return { tokens, pos: pos + terminator.length };
       }
 
-      for (const lexer of this.lexers) {
-        if (!lexer.match(src, pos)) continue;
-        flushBuffer();
-        const { tokens: newTokens, pos: newPos } = lexer.lexer(src, pos);
-        tokens.push(newTokens[0]);
+      let matched = false; // Track if a plugin matched
+      for (const plugin of this.plugins) {
+        if (!plugin.match(src, pos)) continue;
+        flushBuffer(); // Ensure buffer is flushed before processing the plugin
+        const { tokens: newTokens, pos: newPos } = plugin.lex(src, pos);
+        tokens.push(...newTokens);
         pos = newPos;
+        if (pos >= src.length) break;
+        matched = true; // Mark that a plugin matched
         break;
       }
 
-      if (pos >= src.length) break;
+      if (matched) continue; // Restart the loop after processing a plugin match
+
+      if (pos >= src.length) {
+        flushBuffer();
+        break;
+      };
       buffer += src[pos];
       pos++;
     }
@@ -53,25 +65,8 @@ export class Lexer {
     flushBuffer();
     return { tokens, pos };
   }
-}
 
-export class Renderer {
-  private renderers = new Map<
-    string,
-    (token: Token, renderTokens: (tokens: Token[]) => string) => string
-  >();
-
-  constructor() {
-    this.addRenderer("Text", (token) => token.value || "");
-  }
-
-  addRenderer(
-    tokenType: string,
-    renderer: (
-      token: Token,
-      renderTokens: (tokens: Token[]) => string,
-    ) => string,
-  ): void {
+  private addRenderer(tokenType: string, renderer: (token: Token, renderTokens: (tokens: Token[]) => string) => string): void {
     this.renderers.set(tokenType, renderer);
   }
 
@@ -81,73 +76,41 @@ export class Renderer {
 
   private renderToken(token: Token): string {
     const renderer = this.renderers.get(token.id);
-    if (renderer) {
-      return renderer(token, this.renderTokens.bind(this));
-    }
-    return "";
-  }
-}
-
-export class Transpiler {
-  lexer: Lexer;
-  renderer: Renderer;
-  plugins: Plugin[] = [];
-
-  constructor() {
-    this.lexer = new Lexer();
-    this.renderer = new Renderer();
-  }
-
-  addPlugin(plugin: Plugin): void {
-    if (this.plugins.find((p) => p.id === plugin.id)) {
-      throw new Error(`Plugin type ${plugin.id} already exists`);
-    }
-
-    this.plugins.push(plugin);
-    this.lexer.addLexer(plugin.lex);
-    this.renderer.addRenderer(plugin.id, plugin.render);
+    return renderer ? renderer(token, this.renderTokens.bind(this)) : "";
   }
 
   renderHTML(src: string): string {
-    const { tokens } = this.lexer.lex(src, 0);
-    return this.renderer.renderTokens(tokens);
+    const { tokens } = this.lex(src, 0);
+    return this.renderTokens(tokens);
   }
-
-  lex(src: string): Token[] {
-    const { tokens } = this.lexer.lex(src, 0);
-    return tokens;
-  }
-}
-
-export interface TestCase {
-  description?: string;
-  markdownInput: string;
-  expectedTokens: Token[];
-  expectedHTML: string;
 }
 
 export interface Plugin {
-  lex: LexNode;
-  render: RenderFunction;
+  match: Match;
+  lex: Lex;
+  render: Render;
   id: string;
 }
 
-export interface MatchFunction {
+export interface Match {
   (src: string, pos: number): boolean;
 }
 
-export interface LexFunction {
-  (
-    src: string,
-    pos: number,
-  ): { pos: number; tokens: Token[] };
+export interface Lex {
+  (src: string, pos: number): { pos: number; tokens: Token[] };
 }
 
-export interface LexNode {
-  match: MatchFunction;
-  lexer: LexFunction;
-}
-
-export interface RenderFunction {
+export interface Render {
   (token: Token): string;
+}
+
+export interface TestCaseConfig {
+  description: string;
+}
+
+export interface TestCase {
+  config?: TestCaseConfig;
+  markdownInput: string;
+  expectedTokens: Token[];
+  expectedHTML: string;
 }

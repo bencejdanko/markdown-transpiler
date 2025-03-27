@@ -1,49 +1,34 @@
-import { LexFunction, RenderFunction, Token, Plugin, LexNode, MatchFunction } from "@transpiler/mod.ts";
+import { Token, Plugin } from "@transpiler/mod.ts";
 import { inlineTranspiler } from "@markdown/mod.ts";
 
-const match: MatchFunction = (_src: string, _pos: number) => {
+const match = (_src: string, _pos: number) => {
     return true; //catchall
 }
 
-const lexer: LexFunction = (src: string, pos: number) => {
+const lex = (src: string, pos: number) => {
     const children: Token[] = [];
+    const { tokens, pos: newPos } = inlineTranspiler.lex(src, pos, "\n\n");
+    children.push(...tokens);
+    pos = newPos;
 
-    while (pos < src.length) {
-        const { tokens, pos: newPos } = inlineTranspiler.lexer.lex(src, pos, "\n");
-
-        if (src[newPos] === "\n") {
-            // Check for two spaces before the newline
-            if (src[pos - 2] === " " && src[pos - 1] === " ") {
-                children.push({ id: "Break" });
-            } else if (src[newPos] !== "\n") {
-                // Add a space if there's content after the newline
-                children.push({ id: "Text", value: " " });
-            }
-            break;
-        }
-
-        children.push(...tokens);
-        pos = newPos;
+    if (children.length === 0) {
+        return { tokens: [], pos };
     }
-
+    
     return { tokens: [{ id: "Paragraph", children }], pos };    
 };
 
-const render: RenderFunction = (token: Token) => {
+const render = (token: Token) => {
     if (!token.children || token.children.length === 0) {
         return "";
     }
-    return `<p>${inlineTranspiler.renderer.renderTokens(token.children)}</p>`;
+    return `<p>${inlineTranspiler.renderTokens(token.children)}</p>`;
 } 
-
-const lex: LexNode = {
-    lexer,
-    match
-}
 
 const plugin: Plugin = {
     id: "Paragraph",
     lex,
+    match,
     render
 }
 

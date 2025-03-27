@@ -10,8 +10,7 @@ const tokens: Token[] = [
             },
 
             {
-                id: "Text",
-                value: " "
+                id: "Break"
             },
             
             {
@@ -22,4 +21,4 @@ const tokens: Token[] = [
     }
 ]
 
-export default tokens;
+export default tokens

@@ -1,4 +1,4 @@
-import { MatchFunction, TestCase, Transpiler, LexNode, LexFunction } from "@transpiler/mod.ts";
+import { Transpiler, TestCase, Plugin } from "@transpiler/mod.ts";
 import { assertEquals } from "@std/assert";
 
 const testCases: TestCase[] = [
@@ -16,7 +16,7 @@ const transpiler = new Transpiler();
 for (const testCase of testCases) {
   Deno.test(`Token test case: ${testCase.markdownInput}`, () => {
     assertEquals(
-      transpiler.lex(testCase.markdownInput),
+      transpiler.lex(testCase.markdownInput, 0).tokens,
       testCase.expectedTokens,
     );
   });
@@ -31,22 +31,18 @@ for (const testCase of testCases) {
 
 Deno.test("Can't add duplicate plugin", () => {
 
-  const match: MatchFunction = (_src: string, _pos: number) => {
+  const match = (_src: string, _pos: number) => {
     return false; 
   }
 
-  const lexer: LexFunction = (_src: string, pos: number) => {
+  const lex = (_src: string, pos: number) => {
     return { tokens: [], pos };
   }
 
-  const lex: LexNode = {
-    lexer,
-    match
-  }
-
-  const plugin = {
+  const plugin: Plugin = {
     id: "Text",
     lex,
+    match,
     render: () => {
       return "";
     },

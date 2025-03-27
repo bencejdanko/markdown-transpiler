@@ -1,6 +1,9 @@
-import { TestCase } from "@transpiler/mod.ts";
+import { TestCase, TestCaseConfig } from "@transpiler/mod.ts";
 import CadenceMarkdown from "./mod.ts";
 import { assertEquals } from "@std/assert";
+
+import { parse } from "jsr:@std/yaml";
+
 
 async function readTestCase(path: string): Promise<TestCase | undefined> {
   try {
@@ -8,11 +11,19 @@ async function readTestCase(path: string): Promise<TestCase | undefined> {
     const md = await Deno.readFile(resolvedPath + "case.md");
     const html = await Deno.readFile(resolvedPath + "case.html");
     const tokens = await import(resolvedPath + "case.ts");
+
+    let config: Uint8Array | undefined;
+    try {
+      config = await Deno.readFile(resolvedPath + "case.yml");
+    } catch {
+      config = undefined;
+    }
     
     return {
       markdownInput: new TextDecoder().decode(md),
       expectedTokens: tokens.default,
       expectedHTML: new TextDecoder().decode(html),
+      config: parse(new TextDecoder().decode(config)) as TestCaseConfig | undefined,
     };
   } catch (e) {
     console.error(e);
@@ -37,6 +48,7 @@ async function readAllTestCases(basePath: string): Promise<TestCase[]> {
 const testCaseGroups = [
   { name: "HEADER TEST CASES", path: "./examples/header" },
   { name: "PARAGRAPH TEST CASES", path: "./examples/paragraph" },
+  { name: "THEMATIC BREAK TEST CASES", path: "./examples/thematic_break" },
 ];
 
 for (const group of testCaseGroups) {
@@ -44,11 +56,14 @@ for (const group of testCaseGroups) {
 
   console.log(`%c${group.name}`, "color: blue; font-weight: bold;");
   for (const [index, testCase] of testCases.entries()) {
-    console.log(`CASE ${index}: %c${testCase.markdownInput}`, "color: green; font-weight: semibold;");
+    console.log(`CASE ${index}: %c${testCase.markdownInput.replace(/ /g, '→')}`, "color: green; font-weight: semibold;");
+    if (testCase.config?.description) {
+      console.log(`%cDescription: ${testCase.config.description}`, "color: orange; font-weight: normal;");
+    }
 
     Deno.test(`${group.name} CASE ${index} TOKENS:`, () => {
       assertEquals(
-        CadenceMarkdown.lex(testCase.markdownInput),
+        CadenceMarkdown.lex(testCase.markdownInput, 0).tokens,
         testCase.expectedTokens,
       );
     });
