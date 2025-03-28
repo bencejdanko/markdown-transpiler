@@ -1,141 +1,131 @@
-import { Token, Plugin, Lex } from "@transpiler/mod.ts";
+import { Lex, Plugin, Token } from "@transpiler/mod.ts";
 import transpiler from "@markdown/mod.ts";
 
 const OPEN = ">";
-const HIGHLIGHT_REGEX = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](?:\s*|\n)/;
+const HIGHLIGHT_REGEX =
+  /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](?:\s*|\n)/;
 
-const match: Plugin['match'] = (src: string, pos: number) => {
-    // Optimization: Also check if it's followed by a space or end of line/string,
-    // although the main lex handles the actual consumption.
-    // return src.startsWith(OPEN, pos);
-    // Let's be slightly more robust for the initial match: '>' followed by space or EOL/EOF
-     if (src[pos] !== OPEN) return false;
-     const nextChar = src[pos + 1];
-     return nextChar === ' ' || nextChar === '\n' || nextChar === undefined;
-
+const match: Plugin["match"] = (src: string, pos: number) => {
+  if (src[pos] !== OPEN) return false;
+  const nextChar = src[pos + 1];
+  // Allow '>' followed by space, newline, highlight marker, or end of string
+  return nextChar === " " || nextChar === "\n" || nextChar === "[" ||
+    nextChar === undefined;
 };
 
 const lex: Lex = (src: string, pos: number) => {
-    let currentPos = pos;
-    const contentLines: string[] = [];
-    let highlightType: string | undefined = undefined;
-    let firstLine = true;
-    let isInBlockquoteContext = false; // Start assuming we are not, the first '>' line will set this
+  let currentPos = pos;
+  const contentLines: string[] = [];
+  let highlightType: string | undefined = undefined;
+  let firstLineProcessed = false; // Track if we've processed the first potential '>' line
+  let isInBlockquoteContext = false;
 
-    while (currentPos < src.length) {
-        const lineStartPos = currentPos;
+  while (currentPos < src.length) {
+    const lineStartPos = currentPos;
 
-        // Find the end of the current line
-        let lineEndPos = src.indexOf('\n', lineStartPos);
-        if (lineEndPos === -1) {
-            lineEndPos = src.length; // Reached end of file
-        }
-
-        // Extract the full current line to check for blankness
-        const currentLineFull = src.substring(lineStartPos, lineEndPos);
-
-        let lineContentToAdd: string | null = null; // What content to add, null if line breaks quote
-        let startsWithMarker = src.startsWith(OPEN, lineStartPos);
-
-        if (startsWithMarker) {
-            // Line starts with '>'
-            isInBlockquoteContext = true; // We are definitely in the quote now
-
-            // Move past the '>'
-            let lineContentStartPos = lineStartPos + OPEN.length;
-            // Skip *one* optional space immediately after '>'
-            if (src[lineContentStartPos] === ' ') {
-                lineContentStartPos++;
-            }
-
-            // Extract the raw content of this line (part after '>')
-            let lineContent = src.substring(lineContentStartPos, lineEndPos);
-
-            // Handle Highlight only on the very first line that starts with '>'
-            if (firstLine) {
-                firstLine = false; // Don't check highlight again
-                const highlightMatch = lineContent.match(HIGHLIGHT_REGEX);
-                if (highlightMatch) {
-                    highlightType = highlightMatch[1];
-                    // Remove the highlight syntax from the line content
-                    lineContent = lineContent.substring(highlightMatch[0].length);
-                }
-            }
-            lineContentToAdd = lineContent;
-
-        } else {
-            // Line does NOT start with '>'
-            // Check for lazy continuation:
-            // 1. Must be following a line that was part of the quote (isInBlockquoteContext is true)
-            // 2. Must not be a blank line (interrupts the quote)
-            if (isInBlockquoteContext && currentLineFull.trim().length > 0) {
-                // It's a lazy continuation line
-                // Add the entire line content as is
-                lineContentToAdd = currentLineFull;
-                // We remain in the blockquote context
-            } else {
-                // Not a lazy line (blank line, or not following quote content)
-                // This line breaks the blockquote. Set context false and prepare to exit.
-                isInBlockquoteContext = false;
-                lineContentToAdd = null; // Signal to break loop
-            }
-        }
-
-        // --- Loop Control ---
-        if (lineContentToAdd !== null) {
-            // Consume the line and add its content
-            contentLines.push(lineContentToAdd);
-            // Move currentPos to the start of the next line (or end of src)
-            currentPos = lineEndPos + (lineEndPos < src.length ? 1 : 0); // Skip '\n' if it exists
-            // If the line started *without* '>', firstLine flag becomes irrelevant (can't check highlight anymore)
-            if(!startsWithMarker) {
-                firstLine = false;
-            }
-        } else {
-            // Line breaks the blockquote, break the loop without advancing currentPos
-            break;
-        }
-    } // End while loop
-
-    // If we didn't consume any lines (e.g., just '>' at EOF, or failed lazy check immediately)
-    // The check should be if contentLines is empty, as currentPos might advance over the initial '>'
-    if (contentLines.length === 0) {
-      return { tokens: [], pos: pos }; // Return original position
+    // Find the end of the current line
+    let lineEndPos = src.indexOf("\n", lineStartPos);
+    if (lineEndPos === -1) {
+      lineEndPos = src.length; // Reached end of file
     }
 
-    // Join the collected lines to form the blockquote's inner content
-    const blockquoteInnerContent = contentLines.join('\n');
+    const currentLineFull = src.substring(lineStartPos, lineEndPos);
+    const lineIsEmpty = currentLineFull.trim().length === 0;
+    const startsWithMarker = src.startsWith(OPEN, lineStartPos);
 
-    // Use the main transpiler to lex the inner content
-    const { tokens: children } = transpiler.lex(blockquoteInnerContent, 0);
+    if (startsWithMarker) {
+      isInBlockquoteContext = true; // Definitely in the quote
 
-    return {
-        tokens: [{
-            id: "Blockquote",
-            children,
-            value: highlightType
-        }],
-        // currentPos is already correctly positioned after the last consumed line
-        pos: currentPos
-    };
+      // Move past the '>'
+      let lineContentStartPos = lineStartPos + OPEN.length;
+      // Skip *one* optional space immediately after '>'
+      if (src[lineContentStartPos] === " ") {
+        lineContentStartPos++;
+      }
+
+      const lineContent = src.substring(lineContentStartPos, lineEndPos);
+
+      // Handle Highlight only on the very first line that starts with '>'
+      if (!firstLineProcessed) {
+        firstLineProcessed = true; // Mark as processed
+        const highlightMatch = lineContent.match(HIGHLIGHT_REGEX);
+        if (highlightMatch) {
+          highlightType = highlightMatch[1];
+          // Consume this line (advance position) and continue to the next line
+          currentPos = lineEndPos + (lineEndPos < src.length ? 1 : 0); // Skip '\n' if it exists
+          continue; // Go to the next iteration of the while loop
+        }
+        // If it wasn't a highlight, fall through to add content
+      }
+
+      // Add the content (if it wasn't a highlight line that we 'continue'd past)
+      contentLines.push(lineContent);
+      // Mark to advance position after adding content
+      currentPos = lineEndPos + (lineEndPos < src.length ? 1 : 0);
+    } else { // Line does NOT start with '>'
+      // Check for lazy continuation or break
+      if (isInBlockquoteContext && !lineIsEmpty) {
+        // Lazy continuation: Add the whole line
+        contentLines.push(currentLineFull);
+        // Mark to advance position
+        currentPos = lineEndPos + (lineEndPos < src.length ? 1 : 0);
+        firstLineProcessed = true; // A lazy line means we are past the first line check
+      } else {
+        // Breaks the blockquote (blank line, or not following quote content)
+        // Do *not* advance currentPos, just break the loop
+        break;
+      }
+    }
+  } // End while loop
+
+  while (src[currentPos] === "\n") {
+    currentPos++;
+  }
+
+  // We need to have consumed *something* (either found a highlight or added content lines)
+  // If currentPos is still the original pos, nothing was consumed.
+  if (currentPos === pos) {
+    return { tokens: [], pos: pos }; // Return original position, indicating no match
+  }
+
+  // Join the collected lines to form the blockquote's inner content
+  // Trim leading/trailing whitespace that might result from empty lines / spacing
+  const blockquoteInnerContent = contentLines.join("\n").trim();
+
+  // Use the main transpiler to lex the inner content
+  // Handle empty content (e.g., "> [!NOTE]" followed by EOF or break)
+  const children = blockquoteInnerContent
+    ? transpiler.lex(blockquoteInnerContent, 0).tokens
+    : [];
+
+  return {
+    tokens: [{
+      id: "Blockquote",
+      children,
+      value: highlightType, // Store the highlight type (NOTE, TIP, etc.)
+    }],
+    pos: currentPos, // Return the final position *after* the consumed blockquote
+  };
 };
 
 // Render function remains the same
-const render: Plugin['render'] = (token: Token) => {
-    const highlightType = token.value as string | undefined;
-    const className = highlightType ? ` class="highlight-${highlightType.toLowerCase()}"` : "";
-    const innerHTML = token.children && token.children.length > 0
-        ? transpiler.renderTokens(token.children)
-        : "";
-    return `<blockquote${className}>${innerHTML}</blockquote>`;
+const render: Plugin["render"] = (token: Token) => {
+  const highlightType = token.value as string | undefined;
+  const className = highlightType
+    ? ` class="highlight-${highlightType.toLowerCase()}"`
+    : "";
+  const innerHTML = token.children && token.children.length > 0
+    ? transpiler.renderTokens(token.children)
+    : "";
+  // Ensure blockquote has at least a non-breaking space if empty, common practice
+  return `<blockquote${className}>${innerHTML || " "}</blockquote>`;
 };
 
-
 const plugin: Plugin = {
-    id: "Blockquote",
-    match,
-    lex,
-    render
+  id: "Blockquote",
+  match,
+  lex,
+  render,
 };
 
 export default plugin;

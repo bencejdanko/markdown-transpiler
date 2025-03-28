@@ -50,6 +50,10 @@ const testCaseGroups = [
   { name: "PARAGRAPH TEST CASES", path: "./examples/paragraph" },
   { name: "THEMATIC BREAK TEST CASES", path: "./examples/thematic_break" },
   { name: "BLOCKQUOTE TEST CASES", path: "./examples/blockquote" },
+  { name: "ESCAPE TEST CASES", path: "./examples/escape" },
+  { name: "MATH TEST CASES", path: "./examples/math" },
+  { name: "IMAGE TEST CASES", path: "./examples/image" },
+  { name: "ANCHOR TEST CASES", path: "./examples/anchor" },
 ];
 
 for (const group of testCaseGroups) {

@@ -19,6 +19,7 @@
     "npm:react-dom@*": "19.0.0_react@19.0.0",
     "npm:react@*": "19.0.0",
     "npm:shiki@*": "3.2.1",
+    "npm:temml@*": "0.11.2",
     "npm:twind@*": "0.16.19"
   },
   "jsr": {
@@ -357,6 +358,9 @@
     },
     "style-vendorizer@2.2.3": {
       "integrity": "sha512-/VDRsWvQAgspVy9eATN3z6itKTuyg+jW1q6UoTCQCFRqPDw8bi3E1hXIKnGw5LvXS2AQPuJ7Af4auTLYeBOLEg=="
+    },
+    "temml@0.11.2": {
+      "integrity": "sha512-7YkDcDYE5UXV6yOGYgcT2A0J+IeXye2gXg77eH8WxLOcVssGMxPSxkh6GkyZ5owLM4C3u/d5oG/2gZrlQ+mAew=="
     },
     "trim-lines@3.0.1": {
       "integrity": "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg=="

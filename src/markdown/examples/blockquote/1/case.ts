@@ -1,16 +1,17 @@
-import { Token } from "@transpiler/mod.ts";
-
-const tokens: Token[] = [
+export default [
     {
         id: "Blockquote",
         children: [
             {
-                id: "Text",
-                value: "Basic blockquote."
+                id: "Paragraph",
+                children: [
+                    {
+                        id: "Text",
+                        value: "Basic blockquote."
+                    }
+                ]
             }
         ],
         value: undefined
     }
 ]
-
-export default tokens;

@@ -27,8 +27,8 @@ export class Transpiler {
 
     const flushBuffer = () => {
       if (buffer) {
-        if (buffer.trim().length > 0) {
-          tokens.push({ id: "Text", value: buffer.trim() });
+        if (buffer.length > 0) {
+          tokens.push({ id: "Text", value: buffer });
         }
         buffer = "";
       }
