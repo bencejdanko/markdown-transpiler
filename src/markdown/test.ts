@@ -54,6 +54,7 @@ const testCaseGroups = [
   { name: "MATH TEST CASES", path: "./examples/math" },
   { name: "IMAGE TEST CASES", path: "./examples/image" },
   { name: "ANCHOR TEST CASES", path: "./examples/anchor" },
+  { name: "FRONT MATTER TEST CASES", path: "./examples/frontmatter" },
 ];
 
 for (const group of testCaseGroups) {
