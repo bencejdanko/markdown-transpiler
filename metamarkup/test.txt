@@ -1,0 +1,11 @@
+---
+title: "Summarization of Results"
+date: "2025-2-19"
+tags: ["React", "TypeScript"]
+parent: uber-eats-clone-1
+---
+
+The first.
+
+- [Summarization](https://google.com)
+- [Defining Product Requirements](/archives/uber-eats-clone-3/){target=_blank}
